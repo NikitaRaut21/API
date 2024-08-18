@@ -1,10 +1,12 @@
 import User from "./../models/User.js"
 import bcrypt, { hash } from 'bcrypt'
+import jwt from "jsonwebtoken";
 const saltRounds = 10;
 const hashPassword = async (password) => {
     return await bcrypt.hash(password, saltRounds)
 }
-
+const {createRequire}= await import('module')
+const require = createRequire(import.meta.url);
 const PostUser = async (req, res) => {
     const { name, email, password, age, mobileNo,role } = req.body;
     const user = new User({
@@ -34,10 +36,22 @@ const PostUser = async (req, res) => {
     }
 }
 const getAlluser = async (req, res) => {
-    const user = await User.find().select('-password');
+
+    
+const user = await User.find().select('-password');
+const jwt = require('jsonwebtoken');
+const tokens = user.map(User=>
+    {
+        return jwt.sign({userId:User._id},process.env.JWT_SECRET,{expiresIn:'1h'})
+    }
+    )
+
     res.json({
         success: true,
-        user: user,
+        users: user.map((user,index)=>({
+            ...user.toObject(),
+            token: tokens[index]
+        })),
         message: "user fetch successfully"
 
     })
@@ -52,6 +66,8 @@ const getById = async (req, res) => {
             data: null
         })
     }
+    const jwt = require('jsonwebtoken');
+    const  token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1hr'})
     const userData = {
         name: user.name,
         email: user.email,
@@ -59,6 +75,7 @@ const getById = async (req, res) => {
         mobileNo: user.mobileNo,
       password: await hashPassword(user.password),
     role: user.role,
+     token:token,
         _id: user._id,
         _v: user._v
     }
@@ -102,7 +119,7 @@ const deleteUser = async (req, res) => {
     })
 }
 const PostLogin = async (req, res) => {
-    const { email, password } = req.body
+   const { email, password } = req.body
     const user = await User.findOne({ email })
     if (!user)
         return res.json({

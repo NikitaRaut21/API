@@ -3,6 +3,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import cors from 'cors';
 dotenv.config();
+
 import {PostUser,getAlluser,getById,putUser,deleteUser, PostLogin } from "./controller/user.js"
 const app = express();
 app.use(express.json());
